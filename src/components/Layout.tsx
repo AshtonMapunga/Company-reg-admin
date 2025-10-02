@@ -1,4 +1,4 @@
-import React, { type ReactNode, useState } from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Box,
@@ -13,8 +13,6 @@ import {
   Typography,
   useTheme,
   Collapse,
-  ListItemAvatar,
-  Avatar,
   ListSubheader
 } from '@mui/material';
 import {
@@ -22,28 +20,15 @@ import {
   Assignment as ServicesIcon,
   ExpandLess,
   ExpandMore,
-  Business as BusinessIcon,
-  Receipt as TaxIcon,
-  Storage as ITIcon,
-  Description as SoftwareIcon,
-  Calculate as AccountingIcon,
-  VerifiedUser as AuditIcon,
-  TrendingUp as StrategyIcon,
-  Apps as MicrosoftIcon,
-  Person
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
-// Import your logo image - update the path to match your actual logo file
-import logoImage from '../assets/logo.png'; // Adjust this path to your logo
+// Import your logo image
+import logoImage from '../assets/logo.png'; // adjust path if needed
 
 const drawerWidth = 240;
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,7 +50,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       path: '/applied-services',
       hasDropdown: true
     },
-     
   ];
 
   const serviceItems = [
@@ -83,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      
+
       {/* App Bar */}
       <AppBar
         position="fixed"
@@ -112,7 +96,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         variant="permanent"
         anchor="left"
       >
-        {/* Logo Section at the top of the sidebar */}
+        {/* Logo */}
         <Box 
           sx={{ 
             display: 'flex', 
@@ -179,9 +163,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                           selected={location.pathname === service.path}
                           onClick={() => navigate(service.path)}
                         >
-                          <ListItemIcon>
-                            {service.icon}
-                          </ListItemIcon>
                           <ListItemText primary={service.text} />
                         </ListItemButton>
                       ))}
@@ -204,8 +185,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           width: `calc(100% - ${drawerWidth}px)`,
         }}
       >
-        <Toolbar /> {/* This pushes content below the app bar */}
-        {children}
+        <Toolbar /> 
+        {/* React Router outlet goes here */}
+        <Outlet />
       </Box>
     </Box>
   );

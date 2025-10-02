@@ -42,7 +42,7 @@ function App() {
 
           {/* Routes WITH Layout */}
           <Route
-            element={<Layout children={undefined} />}
+            element={<Layout  />}
           >
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
