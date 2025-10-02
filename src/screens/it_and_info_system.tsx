@@ -57,7 +57,7 @@ interface InformationSystem {
   contactName: string;
   phoneNumber: string;
   serviceType: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'In Progress' | 'Completed';
+  status: 'Pending' | 'Approved' | 'Rejected' ;
   createdAt: string;
   updatedAt?: string;
 }
@@ -94,10 +94,7 @@ const mapApiStatusToComponentStatus = (apiStatus: string): InformationSystem['st
       return 'Approved';
     case 'pending':
       return 'Pending';
-    case 'in progress':
-      return 'In Progress';
-    case 'completed':
-      return 'Completed';
+  
     case 'rejected':
       return 'Rejected';
     default:
@@ -259,7 +256,7 @@ const InformationSystemManagement: React.FC = () => {
 
   // Get unique service types for filter dropdown
   const serviceTypes = ['all', ...new Set(informationSystems.map(system => system.serviceType))];
-  const statusOptions = ['all', 'Pending', 'Approved', 'Rejected', 'In Progress', 'Completed'];
+  const statusOptions = ['all', 'Pending', 'Approved', 'Rejected'];
 
   // Filter information systems based on filter options and search term
   useEffect(() => {
@@ -339,12 +336,10 @@ const InformationSystemManagement: React.FC = () => {
         return theme.palette.success.main;
       case 'Pending':
         return theme.palette.warning.main;
-      case 'In Progress':
-        return theme.palette.info.main;
+     
       case 'Rejected':
         return theme.palette.error.main;
-      case 'Completed':
-        return theme.palette.success.dark;
+    
       default:
         return theme.palette.warning.main;
     }
@@ -841,8 +836,6 @@ const InformationSystemManagement: React.FC = () => {
                     <MenuItem value="Pending">Pending</MenuItem>
                     <MenuItem value="Approved">Approved</MenuItem>
                     <MenuItem value="Rejected">Rejected</MenuItem>
-                    <MenuItem value="In Progress">In Progress</MenuItem>
-                    <MenuItem value="Completed">Completed</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>

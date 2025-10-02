@@ -20,19 +20,22 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  Snackbar
+  Snackbar,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
   Visibility as ViewIcon,
-  Edit as EditIcon,
+  Update as UpdateIcon,
   Delete as DeleteIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
 import appiledService from '../services/applied_service_service';
 
-// Typess
+// Types
 interface TaxConsultancy {
   id: string;
   companyName: string;
@@ -52,6 +55,14 @@ interface FilterOptions {
     end: Date | null;
   };
 }
+
+// Status options for dropdown
+const statusOptions = [
+  { value: 'approved', label: 'Approved' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'rejected', label: 'Rejected' }
+];
 
 // Map API status to component status
 const mapApiStatusToComponentStatus = (apiStatus: string): TaxConsultancy['status'] => {
@@ -117,15 +128,10 @@ const TaxConsultancyManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTaxConsultancy, setSelectedTaxConsultancy] = useState<TaxConsultancy | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [editFormData, setEditFormData] = useState({
-    companyName: '',
-    email: '',
-    contactName: '',
-    phoneNumber: ''
-  });
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   useEffect(() => {
@@ -151,7 +157,7 @@ const TaxConsultancyManagement: React.FC = () => {
     fetchTaxConsultancies();
   }, []);
 
-  const statusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
+  const filterStatusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
 
   // Filter tax consultancies based on filter options and search term
   useEffect(() => {
@@ -217,6 +223,55 @@ const TaxConsultancyManagement: React.FC = () => {
     setSearchTerm('');
   };
 
+  const handleStatusUpdateClick = (taxConsultancy: TaxConsultancy) => {
+    setSelectedTaxConsultancy(taxConsultancy);
+    setSelectedStatus(taxConsultancy.status);
+    setStatusDialogOpen(true);
+  };
+
+  const handleDeleteClick = (taxConsultancy: TaxConsultancy) => {
+    setSelectedTaxConsultancy(taxConsultancy);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleStatusUpdate = async () => {
+    try {
+      if (!selectedTaxConsultancy || !selectedStatus) return;
+      
+      await appiledService.updateAppliedService(selectedTaxConsultancy.id, { status: selectedStatus });
+      
+      // Refresh the list
+      const response = await appiledService.getAllAppliedService();
+      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
+      setTaxConsultancies(mappedTaxConsultancies);
+      
+      setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
+      setStatusDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      setSnackbar({ open: true, message: 'Failed to update status', severity: 'error' });
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      if (!selectedTaxConsultancy) return;
+      
+      await appiledService.deleteAppliedService(selectedTaxConsultancy.id);
+      
+      // Refresh the list
+      const response = await appiledService.getAllAppliedService();
+      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
+      setTaxConsultancies(mappedTaxConsultancies);
+      
+      setSnackbar({ open: true, message: 'Tax consultancy deleted successfully', severity: 'success' });
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting tax consultancy:', error);
+      setSnackbar({ open: true, message: 'Failed to delete tax consultancy', severity: 'error' });
+    }
+  };
+
   const getStatusColor = (status: TaxConsultancy['status']): string => {
     switch (status) {
       case 'approved':
@@ -253,67 +308,6 @@ const TaxConsultancyManagement: React.FC = () => {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const handleEditClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
-    setEditFormData({
-      companyName: taxConsultancy.companyName,
-      email: taxConsultancy.email,
-      contactName: taxConsultancy.contactName,
-      phoneNumber: taxConsultancy.phoneNumber
-    });
-    setEditDialogOpen(true);
-  };
-
-  const handleDeleteClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleEditFormChange = (field: string, value: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleEditSubmit = async () => {
-    try {
-      if (!selectedTaxConsultancy) return;
-      
-      await appiledService.updateAppliedService(selectedTaxConsultancy.id, editFormData);
-      
-      // Refresh the list
-      const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
-      
-      setSnackbar({ open: true, message: 'Tax consultancy updated successfully', severity: 'success' });
-      setEditDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating tax consultancy:', error);
-      setSnackbar({ open: true, message: 'Failed to update tax consultancy', severity: 'error' });
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      if (!selectedTaxConsultancy) return;
-      
-      await appiledService.deleteAppliedService(selectedTaxConsultancy.id);
-      
-      // Refresh the list
-      const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
-      
-      setSnackbar({ open: true, message: 'Tax consultancy deleted successfully', severity: 'success' });
-      setDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Error deleting tax consultancy:', error);
-      setSnackbar({ open: true, message: 'Failed to delete tax consultancy', severity: 'error' });
-    }
   };
 
   const calculateProgress = (status: TaxConsultancy['status']): number => {
@@ -448,7 +442,7 @@ const TaxConsultancyManagement: React.FC = () => {
               value={filterOptions.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
-              {statusOptions.map(status => (
+              {filterStatusOptions.map(status => (
                 <MenuItem key={status} value={status}>
                   {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </MenuItem>
@@ -624,12 +618,12 @@ const TaxConsultancyManagement: React.FC = () => {
                       </Button>
                       <Button
                         variant="outlined"
-                        startIcon={<EditIcon />}
+                        startIcon={<UpdateIcon />}
                         size="small"
-                        onClick={() => handleEditClick(taxConsultancy)}
+                        onClick={() => handleStatusUpdateClick(taxConsultancy)}
                         fullWidth={isMobile}
                       >
-                        Edit
+                        Update Status
                       </Button>
                       <Button
                         variant="outlined"
@@ -650,54 +644,47 @@ const TaxConsultancyManagement: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Tax Consultancy Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={editFormData.companyName}
-                  onChange={(e) => handleEditFormChange('companyName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={editFormData.email}
-                  onChange={(e) => handleEditFormChange('email', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Contact Name"
-                  value={editFormData.contactName}
-                  onChange={(e) => handleEditFormChange('contactName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={editFormData.phoneNumber}
-                  onChange={(e) => handleEditFormChange('phoneNumber', e.target.value)}
-                />
-              </Grid>
-            </Grid>
-          </Box>
+          {selectedTaxConsultancy && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedTaxConsultancy.companyName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Reference #: {selectedTaxConsultancy.referenceNumber}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Contact: {selectedTaxConsultancy.contactName}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
+                  label="Status"
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  {statusOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={handleEditSubmit}
+            onClick={handleStatusUpdate} 
             variant="contained"
+            disabled={!selectedStatus}
           >
-            Save Changes
+            Update Status
           </Button>
         </DialogActions>
       </Dialog>

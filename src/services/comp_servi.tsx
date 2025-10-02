@@ -62,6 +62,21 @@ const companyService = {
       throw error;
     }
   },
+
+    async updateStatusService(id: string, statusData: { status: string }) {
+    try {
+      const response = await api.put(`/applications/${id}/status`, statusData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating status for ${id}:`, error);
+      throw error;
+    }
+  },
+
 };
 
 export default companyService;

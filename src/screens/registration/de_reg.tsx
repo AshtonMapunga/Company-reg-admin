@@ -20,19 +20,16 @@ import {
   Snackbar,
   MenuItem,
   InputAdornment,
-  FormControlLabel,
-  Checkbox,
   FormControl,
   InputLabel,
   Select
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Add as AddIcon
+  Update as UpdateIcon
 } from '@mui/icons-material';
 import DeregService from '../../services/company_de_registration';
 
@@ -60,7 +57,6 @@ interface DeregApplication {
 const statusOptions = [
   { value: 'approved', label: 'Approved' },
   { value: 'pending', label: 'Pending' },
-  { value: 'in-review', label: 'In Review' },
   { value: 'rejected', label: 'Rejected' }
 ];
 
@@ -119,10 +115,10 @@ const CompanyDeregistration: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<DeregApplication | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<DeregApplication>>({});
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   const fetchApplications = async () => {
@@ -164,10 +160,10 @@ const CompanyDeregistration: React.FC = () => {
     }
   }, [searchTerm, applications]);
 
-  const handleEditClick = (application: DeregApplication) => {
+  const handleStatusUpdateClick = (application: DeregApplication) => {
     setSelectedApplication(application);
-    setEditFormData(application);
-    setEditDialogOpen(true);
+    setSelectedStatus(application.status);
+    setStatusDialogOpen(true);
   };
 
   const handleDeleteClick = (application: DeregApplication) => {
@@ -175,17 +171,17 @@ const CompanyDeregistration: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleEditSubmit = async () => {
-    if (!selectedApplication) return;
+  const handleStatusUpdate = async () => {
+    if (!selectedApplication || !selectedStatus) return;
     
     try {
-      await DeregService.updateAppliedService(selectedApplication.id, editFormData);
-      setEditDialogOpen(false);
-      setSuccess('Application updated successfully!');
+      await DeregService.updateStatusService(selectedApplication.id, { status: selectedStatus });
+      setStatusDialogOpen(false);
+      setSuccess('Status updated successfully!');
       fetchApplications(); // Refresh the list
     } catch (err) {
-      console.error('Error updating application:', err);
-      setError('Failed to update application. Please try again.');
+      console.error('Error updating status:', err);
+      setError('Failed to update status. Please try again.');
     }
   };
 
@@ -201,20 +197,6 @@ const CompanyDeregistration: React.FC = () => {
       console.error('Error deleting application:', err);
       setError('Failed to delete application. Please try again.');
     }
-  };
-
-  const handleInputChange = (field: keyof DeregApplication, value: any) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleCheckboxChange = (field: keyof DeregApplication, checked: boolean) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: checked
-    }));
   };
 
   const getStatusColor = (status: string): string => {
@@ -290,8 +272,6 @@ const CompanyDeregistration: React.FC = () => {
         </Alert>
       </Snackbar>
 
-  
-
       {/* Search Section */}
       <Paper 
         elevation={1} 
@@ -301,30 +281,40 @@ const CompanyDeregistration: React.FC = () => {
           backgroundColor: theme.palette.background.paper
         }}
       >
-        <TextField
-          fullWidth
-          label="Search Applications"
-          placeholder="Search by company name, registration number, business type, applicant name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={clearSearch}
-                >
-                  <ClearIcon />
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            label="Search Applications"
+            placeholder="Search by company name, registration number, business type, applicant name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={clearSearch}
+                  >
+                    <ClearIcon />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchApplications}
+            sx={{ minWidth: 'auto' }}
+          >
+            {isMobile ? '' : 'Refresh'}
+          </Button>
+        </Box>
       </Paper>
 
       {/* Results Count */}
@@ -459,13 +449,14 @@ const CompanyDeregistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditClick(application)}
-                        aria-label="Edit"
+                      <Button
+                        variant="outlined"
+                        startIcon={<UpdateIcon />}
+                        onClick={() => handleStatusUpdateClick(application)}
+                        size="small"
                       >
-                        <EditIcon />
-                      </IconButton>
+                        Update Status
+                      </Button>
                       <IconButton
                         color="error"
                         onClick={() => handleDeleteClick(application)}
@@ -482,154 +473,45 @@ const CompanyDeregistration: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Deregistration Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
           {selectedApplication && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={editFormData.companyName || ''}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Registration Number"
-                  value={editFormData.registrationNumber || ''}
-                  onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Business Type"
-                  value={editFormData.businessType || ''}
-                  onChange={(e) => handleInputChange('businessType', e.target.value)}
-                >
-                  {businessTypes.map(type => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Registration Date"
-                  type="date"
-                  InputLabelProps={{ shrink: true }}
-                  value={editFormData.registrationDate || ''}
-                  onChange={(e) => handleInputChange('registrationDate', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Name"
-                  value={editFormData.applicantName || ''}
-                  onChange={(e) => handleInputChange('applicantName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Email"
-                  value={editFormData.applicantEmail || ''}
-                  onChange={(e) => handleInputChange('applicantEmail', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Phone"
-                  value={editFormData.applicantPhone || ''}
-                  onChange={(e) => handleInputChange('applicantPhone', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Position in Company"
-                  value={editFormData.positionInCompany || ''}
-                  onChange={(e) => handleInputChange('positionInCompany', e.target.value)}
-                >
-                  {positionsInCompany.map(position => (
-                    <MenuItem key={position} value={position}>
-                      {position}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Authority to Act"
-                  value={editFormData.authorityToAct || ''}
-                  onChange={(e) => handleInputChange('authorityToAct', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Reason for Deregistration"
-                  multiline
-                  rows={3}
-                  value={editFormData.deregistrationReason || ''}
-                  onChange={(e) => handleInputChange('deregistrationReason', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={editFormData.hasOutstandingObligations || false}
-                      onChange={(e) => handleCheckboxChange('hasOutstandingObligations', e.target.checked)}
-                    />
-                  }
-                  label="Has Outstanding Obligations"
-                />
-              </Grid>
-              {editFormData.hasOutstandingObligations && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Outstanding Details"
-                    multiline
-                    rows={3}
-                    value={editFormData.outstandingDetails || ''}
-                    onChange={(e) => handleInputChange('outstandingDetails', e.target.value)}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedApplication.companyName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Registration #: {selectedApplication.registrationNumber}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
                   label="Status"
-                  value={editFormData.status || ''}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   {statusOptions.map(option => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
-                </TextField>
-              </Grid>
-            </Grid>
+                </Select>
+              </FormControl>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleStatusUpdate} 
+            variant="contained"
+            disabled={!selectedStatus}
+          >
+            Update Status
+          </Button>
         </DialogActions>
       </Dialog>
 

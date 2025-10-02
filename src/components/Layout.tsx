@@ -65,11 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       path: '/applied-services',
       hasDropdown: true
     },
-     {
-      text: 'Admins',
-      icon: <Person />,
-      path: '/admins',
-    },
+     
   ];
 
   const serviceItems = [

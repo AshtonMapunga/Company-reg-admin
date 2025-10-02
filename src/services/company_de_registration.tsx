@@ -68,6 +68,20 @@ const DeregService = {
       throw error;
     }
   },
+    // ✅ Status update service
+  async updateStatusService(id: string, statusData: { status: string }) {
+    try {
+      const response = await api.put(`/comp_de_reg_applications/${id}/status`, statusData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating status for ${id}:`, error);
+      throw error;
+    }
+  },
 
  
 };

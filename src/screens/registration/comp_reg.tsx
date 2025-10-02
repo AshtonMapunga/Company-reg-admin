@@ -25,15 +25,17 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Add as AddIcon,
+  Update as UpdateIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
 import companyService from '../../services/comp_servi';
@@ -71,7 +73,6 @@ interface CompanyApplication {
 const statusOptions = [
   { value: 'approved', label: 'Approved' },
   { value: 'pending', label: 'Pending' },
-  { value: 'in-review', label: 'In Review' },
   { value: 'rejected', label: 'Rejected' }
 ];
 
@@ -117,11 +118,10 @@ const CompanyRegistration2: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<CompanyApplication | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<CompanyApplication>>({});
-  const [directorsData, setDirectorsData] = useState<Director[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   const fetchApplications = async () => {
@@ -162,11 +162,10 @@ const CompanyRegistration2: React.FC = () => {
     }
   }, [searchTerm, applications]);
 
-  const handleEditClick = (application: CompanyApplication) => {
+  const handleStatusUpdateClick = (application: CompanyApplication) => {
     setSelectedApplication(application);
-    setEditFormData(application);
-    setDirectorsData(application.directors || []);
-    setEditDialogOpen(true);
+    setSelectedStatus(application.status);
+    setStatusDialogOpen(true);
   };
 
   const handleDeleteClick = (application: CompanyApplication) => {
@@ -174,23 +173,17 @@ const CompanyRegistration2: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleEditSubmit = async () => {
-    if (!selectedApplication) return;
+  const handleStatusUpdate = async () => {
+    if (!selectedApplication || !selectedStatus) return;
     
     try {
-      const updateData = {
-        ...editFormData,
-        directors: directorsData,
-        directorsCount: directorsData.length
-      };
-      
-      await companyService.updateCompanyApplication(selectedApplication.id, updateData);
-      setEditDialogOpen(false);
-      setSuccess('Company application updated successfully!');
+      await companyService.updateStatusService(selectedApplication.id, { status: selectedStatus });
+      setStatusDialogOpen(false);
+      setSuccess('Status updated successfully!');
       fetchApplications(); // Refresh the list
     } catch (err) {
-      console.error('Error updating application:', err);
-      setError('Failed to update application. Please try again.');
+      console.error('Error updating status:', err);
+      setError('Failed to update status. Please try again.');
     }
   };
 
@@ -206,40 +199,6 @@ const CompanyRegistration2: React.FC = () => {
       console.error('Error deleting application:', err);
       setError('Failed to delete application. Please try again.');
     }
-  };
-
-  const handleInputChange = (field: keyof CompanyApplication, value: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleDirectorChange = (index: number, field: keyof Director, value: string) => {
-    const updatedDirectors = [...directorsData];
-    updatedDirectors[index] = {
-      ...updatedDirectors[index],
-      [field]: value
-    };
-    setDirectorsData(updatedDirectors);
-  };
-
-  const addDirector = () => {
-    setDirectorsData([
-      ...directorsData,
-      {
-        fullName: '',
-        idNumber: '',
-        nationality: '',
-        occupation: '',
-        phoneNumber: ''
-      }
-    ]);
-  };
-
-  const removeDirector = (index: number) => {
-    const updatedDirectors = directorsData.filter((_, i) => i !== index);
-    setDirectorsData(updatedDirectors);
   };
 
   const getStatusColor = (status: string): string => {
@@ -581,13 +540,14 @@ const CompanyRegistration2: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditClick(application)}
-                        aria-label="Edit"
+                      <Button
+                        variant="outlined"
+                        startIcon={<UpdateIcon />}
+                        onClick={() => handleStatusUpdateClick(application)}
+                        size="small"
                       >
-                        <EditIcon />
-                      </IconButton>
+                        Update Status
+                      </Button>
                       <IconButton
                         color="error"
                         onClick={() => handleDeleteClick(application)}
@@ -604,201 +564,45 @@ const CompanyRegistration2: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>Edit Company Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
           {selectedApplication && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={editFormData.companyName || ''}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Registration Number"
-                  value={editFormData.registrationNumber || ''}
-                  onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Name"
-                  value={editFormData.applicantName || ''}
-                  onChange={(e) => handleInputChange('applicantName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedApplication.companyName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Registration #: {selectedApplication.registrationNumber || 'N/A'}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
                   label="Status"
-                  value={editFormData.status || ''}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   {statusOptions.map(option => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Email"
-                  value={editFormData.applicantEmail || ''}
-                  onChange={(e) => handleInputChange('applicantEmail', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Phone"
-                  value={editFormData.applicantPhone || ''}
-                  onChange={(e) => handleInputChange('applicantPhone', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Contact Email"
-                  value={editFormData.contactEmail || ''}
-                  onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Business Type"
-                  value={editFormData.businessType || ''}
-                  onChange={(e) => handleInputChange('businessType', e.target.value)}
-                >
-                  {businessTypeOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Position in Company"
-                  value={editFormData.positionInCompany || ''}
-                  onChange={(e) => handleInputChange('positionInCompany', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Company Address"
-                  multiline
-                  rows={2}
-                  value={editFormData.companyAddress || ''}
-                  onChange={(e) => handleInputChange('companyAddress', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Alternative Company Name 1"
-                  value={editFormData.companyName2 || ''}
-                  onChange={(e) => handleInputChange('companyName2', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Alternative Company Name 2"
-                  value={editFormData.companyName3 || ''}
-                  onChange={(e) => handleInputChange('companyName3', e.target.value)}
-                />
-              </Grid>
-
-              {/* Directors Section */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">Directors</Typography>
-                  <Button startIcon={<AddIcon />} onClick={addDirector}>
-                    Add Director
-                  </Button>
-                </Box>
-                
-                {directorsData.map((director, index) => (
-                  <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="subtitle1">
-                        Director {index + 1}
-                      </Typography>
-                      <IconButton 
-                        color="error" 
-                        size="small" 
-                        onClick={() => removeDirector(index)}
-                        disabled={directorsData.length <= 1}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                    
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Full Name"
-                          value={director.fullName}
-                          onChange={(e) => handleDirectorChange(index, 'fullName', e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="ID Number"
-                          value={director.idNumber}
-                          onChange={(e) => handleDirectorChange(index, 'idNumber', e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Nationality"
-                          value={director.nationality}
-                          onChange={(e) => handleDirectorChange(index, 'nationality', e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Occupation"
-                          value={director.occupation}
-                          onChange={(e) => handleDirectorChange(index, 'occupation', e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Phone Number"
-                          value={director.phoneNumber}
-                          onChange={(e) => handleDirectorChange(index, 'phoneNumber', e.target.value)}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                ))}
-              </Grid>
-            </Grid>
+                </Select>
+              </FormControl>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleStatusUpdate} 
+            variant="contained"
+            disabled={!selectedStatus}
+          >
+            Update Status
+          </Button>
         </DialogActions>
       </Dialog>
 

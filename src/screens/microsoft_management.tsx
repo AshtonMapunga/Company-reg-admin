@@ -20,20 +20,23 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  Snackbar
+  Snackbar,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
   Visibility as ViewIcon,
-  Edit as EditIcon,
+  Update as UpdateIcon,
   Delete as DeleteIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
 import appiledService from '../services/applied_service_service';
 
-// Typess
-interface TaxConsultancy {
+// Types
+interface MicrosoftServiceApplication {
   id: string;
   companyName: string;
   email: string;
@@ -53,8 +56,16 @@ interface FilterOptions {
   };
 }
 
+// Status options for dropdown
+const statusOptions = [
+  { value: 'approved', label: 'Approved' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'rejected', label: 'Rejected' }
+];
+
 // Map API status to component status
-const mapApiStatusToComponentStatus = (apiStatus: string): TaxConsultancy['status'] => {
+const mapApiStatusToComponentStatus = (apiStatus: string): MicrosoftServiceApplication['status'] => {
   switch (apiStatus.toLowerCase()) {
     case 'approved':
       return 'approved';
@@ -70,8 +81,8 @@ const mapApiStatusToComponentStatus = (apiStatus: string): TaxConsultancy['statu
   }
 };
 
-// Map API data to TaxConsultancy interface
-const mapApiDataToTaxConsultancy = (apiData: any): TaxConsultancy => {
+// Map API data to MicrosoftServiceApplication interface
+const mapApiDataToMicrosoftServiceApplication = (apiData: any): MicrosoftServiceApplication => {
   // Generate a unique ID if not provided
   const id = apiData.id || apiData._id || Math.random().toString(36).substr(2, 9);
   
@@ -82,7 +93,7 @@ const mapApiDataToTaxConsultancy = (apiData: any): TaxConsultancy => {
   const updatedDate = apiData.updatedAt ? new Date(apiData.updatedAt) : new Date();
   
   // Generate a reference number if not provided
-  const referenceNumber = apiData.referenceNumber || `TAX-${Math.floor(100000 + Math.random() * 900000)}`;
+  const referenceNumber = apiData.referenceNumber || `MS-${Math.floor(100000 + Math.random() * 900000)}`;
   
   // Map status
   const status = mapApiStatusToComponentStatus(apiData.status || 'pending');
@@ -104,8 +115,8 @@ const MicrosoftServices: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
-  const [taxConsultancies, setTaxConsultancies] = useState<TaxConsultancy[]>([]);
-  const [filteredTaxConsultancies, setFilteredTaxConsultancies] = useState<TaxConsultancy[]>([]);
+  const [microsoftServiceApplications, setMicrosoftServiceApplications] = useState<MicrosoftServiceApplication[]>([]);
+  const [filteredMicrosoftServiceApplications, setFilteredMicrosoftServiceApplications] = useState<MicrosoftServiceApplication[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
     dateRange: {
@@ -116,78 +127,73 @@ const MicrosoftServices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTaxConsultancy, setSelectedTaxConsultancy] = useState<TaxConsultancy | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedMicrosoftServiceApplication, setSelectedMicrosoftServiceApplication] = useState<MicrosoftServiceApplication | null>(null);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [editFormData, setEditFormData] = useState({
-    companyName: '',
-    email: '',
-    contactName: '',
-    phoneNumber: ''
-  });
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   useEffect(() => {
-    const fetchTaxConsultancies = async () => {
+    const fetchMicrosoftServiceApplications = async () => {
       try {
         setLoading(true);
         const response = await appiledService.getAllAppliedService();
         
-        // Map API response to TaxConsultancy objects
-        const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
+        // Map API response to MicrosoftServiceApplication objects
+        const mappedMicrosoftServiceApplications = response.map((item: any) => mapApiDataToMicrosoftServiceApplication(item));
         
-        setTaxConsultancies(mappedTaxConsultancies);
-        setFilteredTaxConsultancies(mappedTaxConsultancies);
+        setMicrosoftServiceApplications(mappedMicrosoftServiceApplications);
+        setFilteredMicrosoftServiceApplications(mappedMicrosoftServiceApplications);
         setError(null);
       } catch (err) {
-        console.error('Error fetching microsoft services:', err);
-        setError('Failed to load microsoft services. Please try again later.');
+        console.error('Error fetching Microsoft services applications:', err);
+        setError('Failed to load Microsoft services applications. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTaxConsultancies();
+    fetchMicrosoftServiceApplications();
   }, []);
 
-  const statusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
+  const filterStatusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
 
-  // Filter tax consultancies based on filter options and search term
+  // Filter Microsoft service applications based on filter options and search term
   useEffect(() => {
-    let filtered = taxConsultancies;
+    let filtered = microsoftServiceApplications;
 
     // Filter by status
     if (filterOptions.status !== 'all') {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.status === filterOptions.status
+      filtered = filtered.filter(microsoftServiceApplication => 
+        microsoftServiceApplication.status === filterOptions.status
       );
     }
 
     // Filter by date range
     if (filterOptions.dateRange.start) {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.appliedDate >= filterOptions.dateRange.start!
+      filtered = filtered.filter(microsoftServiceApplication => 
+        microsoftServiceApplication.appliedDate >= filterOptions.dateRange.start!
       );
     }
     if (filterOptions.dateRange.end) {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.appliedDate <= filterOptions.dateRange.end!
+      filtered = filtered.filter(microsoftServiceApplication => 
+        microsoftServiceApplication.appliedDate <= filterOptions.dateRange.end!
       );
     }
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(taxConsultancy =>
-        taxConsultancy.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.email.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(microsoftServiceApplication =>
+        microsoftServiceApplication.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        microsoftServiceApplication.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        microsoftServiceApplication.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        microsoftServiceApplication.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    setFilteredTaxConsultancies(filtered);
-  }, [taxConsultancies, filterOptions, searchTerm]);
+    setFilteredMicrosoftServiceApplications(filtered);
+  }, [microsoftServiceApplications, filterOptions, searchTerm]);
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     setFilterOptions(prev => ({
@@ -217,7 +223,7 @@ const MicrosoftServices: React.FC = () => {
     setSearchTerm('');
   };
 
-  const getStatusColor = (status: TaxConsultancy['status']): string => {
+  const getStatusColor = (status: MicrosoftServiceApplication['status']): string => {
     switch (status) {
       case 'approved':
         return theme.palette.success.main;
@@ -232,7 +238,7 @@ const MicrosoftServices: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: TaxConsultancy['status']) => {
+  const getStatusIcon = (status: MicrosoftServiceApplication['status']) => {
     switch (status) {
       case 'approved':
         return '✅';
@@ -255,68 +261,56 @@ const MicrosoftServices: React.FC = () => {
     });
   };
 
-  const handleEditClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
-    setEditFormData({
-      companyName: taxConsultancy.companyName,
-      email: taxConsultancy.email,
-      contactName: taxConsultancy.contactName,
-      phoneNumber: taxConsultancy.phoneNumber
-    });
-    setEditDialogOpen(true);
+  const handleStatusUpdateClick = (microsoftServiceApplication: MicrosoftServiceApplication) => {
+    setSelectedMicrosoftServiceApplication(microsoftServiceApplication);
+    setSelectedStatus(microsoftServiceApplication.status);
+    setStatusDialogOpen(true);
   };
 
-  const handleDeleteClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
+  const handleDeleteClick = (microsoftServiceApplication: MicrosoftServiceApplication) => {
+    setSelectedMicrosoftServiceApplication(microsoftServiceApplication);
     setDeleteDialogOpen(true);
   };
 
-  const handleEditFormChange = (field: string, value: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleEditSubmit = async () => {
+  const handleStatusUpdate = async () => {
     try {
-      if (!selectedTaxConsultancy) return;
+      if (!selectedMicrosoftServiceApplication || !selectedStatus) return;
       
-      await appiledService.updateAppliedService(selectedTaxConsultancy.id, editFormData);
+      await appiledService.updateAppliedService(selectedMicrosoftServiceApplication.id, { status: selectedStatus });
       
       // Refresh the list
       const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
+      const mappedMicrosoftServiceApplications = response.map((item: any) => mapApiDataToMicrosoftServiceApplication(item));
+      setMicrosoftServiceApplications(mappedMicrosoftServiceApplications);
       
-      setSnackbar({ open: true, message: 'microsoft services updated successfully', severity: 'success' });
-      setEditDialogOpen(false);
+      setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
+      setStatusDialogOpen(false);
     } catch (error) {
-      console.error('Error updating:', error);
-      setSnackbar({ open: true, message: 'Failed to update ', severity: 'error' });
+      console.error('Error updating status:', error);
+      setSnackbar({ open: true, message: 'Failed to update status', severity: 'error' });
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      if (!selectedTaxConsultancy) return;
+      if (!selectedMicrosoftServiceApplication) return;
       
-      await appiledService.deleteAppliedService(selectedTaxConsultancy.id);
+      await appiledService.deleteAppliedService(selectedMicrosoftServiceApplication.id);
       
       // Refresh the list
       const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
+      const mappedMicrosoftServiceApplications = response.map((item: any) => mapApiDataToMicrosoftServiceApplication(item));
+      setMicrosoftServiceApplications(mappedMicrosoftServiceApplications);
       
-      setSnackbar({ open: true, message: ' deleted successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'Microsoft service application deleted successfully', severity: 'success' });
       setDeleteDialogOpen(false);
     } catch (error) {
-      console.error('Error deleting :', error);
-      setSnackbar({ open: true, message: 'Failed to delete ', severity: 'error' });
+      console.error('Error deleting Microsoft service application:', error);
+      setSnackbar({ open: true, message: 'Failed to delete Microsoft service application', severity: 'error' });
     }
   };
 
-  const calculateProgress = (status: TaxConsultancy['status']): number => {
+  const calculateProgress = (status: MicrosoftServiceApplication['status']): number => {
     switch (status) {
       case 'approved':
         return 100;
@@ -341,7 +335,7 @@ const MicrosoftServices: React.FC = () => {
         alignItems: 'center',
         minHeight: 400
       }}>
-        <Typography variant="h6">Loading microsoft services ...</Typography>
+        <Typography variant="h6">Loading Microsoft services applications...</Typography>
       </Box>
     );
   }
@@ -372,10 +366,10 @@ const MicrosoftServices: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Microsoft services Applications
+          Microsoft Services Applications
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          View and manage all your microsoft services applications
+          View and manage all your Microsoft services applications
         </Typography>
       </Box>
 
@@ -448,7 +442,7 @@ const MicrosoftServices: React.FC = () => {
               value={filterOptions.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
-              {statusOptions.map(status => (
+              {filterStatusOptions.map(status => (
                 <MenuItem key={status} value={status}>
                   {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </MenuItem>
@@ -482,13 +476,13 @@ const MicrosoftServices: React.FC = () => {
       {/* Results Count */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" color="text.secondary">
-          Showing {filteredTaxConsultancies.length} of {taxConsultancies.length}  applications
+          Showing {filteredMicrosoftServiceApplications.length} of {microsoftServiceApplications.length} applications
         </Typography>
       </Box>
 
-      {/* Tax Consultancies List */}
+      {/* Microsoft Services Applications List */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {filteredTaxConsultancies.length === 0 ? (
+        {filteredMicrosoftServiceApplications.length === 0 ? (
           <Paper 
             elevation={1} 
             sx={{ 
@@ -498,13 +492,13 @@ const MicrosoftServices: React.FC = () => {
             }}
           >
             <Typography variant="h6" color="text.secondary">
-              no microsoft services found matching your filters.
+              No Microsoft services applications found matching your filters.
             </Typography>
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {filteredTaxConsultancies.map((taxConsultancy) => (
-              <Grid item xs={12} md={6} lg={4} key={taxConsultancy.id}>
+            {filteredMicrosoftServiceApplications.map((microsoftServiceApplication) => (
+              <Grid item xs={12} md={6} lg={4} key={microsoftServiceApplication.id}>
                 <Card 
                   sx={{ 
                     height: '100%',
@@ -525,21 +519,21 @@ const MicrosoftServices: React.FC = () => {
                     }}>
                       <Box>
                         <Typography variant="h6" component="h3" gutterBottom>
-                          {taxConsultancy.companyName}
+                          {microsoftServiceApplication.companyName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          #{taxConsultancy.referenceNumber}
+                          #{microsoftServiceApplication.referenceNumber}
                         </Typography>
                       </Box>
                       <Chip
                         label={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <span>{getStatusIcon(taxConsultancy.status)}</span>
-                            <span>{taxConsultancy.status.toUpperCase()}</span>
+                            <span>{getStatusIcon(microsoftServiceApplication.status)}</span>
+                            <span>{microsoftServiceApplication.status.toUpperCase()}</span>
                           </Box>
                         }
                         sx={{ 
-                          backgroundColor: getStatusColor(taxConsultancy.status),
+                          backgroundColor: getStatusColor(microsoftServiceApplication.status),
                           color: 'white',
                           fontWeight: 'bold'
                         }}
@@ -554,7 +548,7 @@ const MicrosoftServices: React.FC = () => {
                           Contact Name:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.contactName}
+                          {microsoftServiceApplication.contactName}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -562,7 +556,7 @@ const MicrosoftServices: React.FC = () => {
                           Email:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.email}
+                          {microsoftServiceApplication.email}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -570,7 +564,7 @@ const MicrosoftServices: React.FC = () => {
                           Phone:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.phoneNumber}
+                          {microsoftServiceApplication.phoneNumber}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -578,7 +572,7 @@ const MicrosoftServices: React.FC = () => {
                           Applied Date:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(taxConsultancy.appliedDate)}
+                          {formatDate(microsoftServiceApplication.appliedDate)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -586,7 +580,7 @@ const MicrosoftServices: React.FC = () => {
                           Last Updated:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(taxConsultancy.updatedDate)}
+                          {formatDate(microsoftServiceApplication.updatedDate)}
                         </Typography>
                       </Box>
                     </Box>
@@ -595,7 +589,7 @@ const MicrosoftServices: React.FC = () => {
                     <Box sx={{ mb: 2 }}>
                       <LinearProgress 
                         variant="determinate" 
-                        value={calculateProgress(taxConsultancy.status)} 
+                        value={calculateProgress(microsoftServiceApplication.status)} 
                         sx={{ 
                           height: 8, 
                           borderRadius: 4,
@@ -603,7 +597,7 @@ const MicrosoftServices: React.FC = () => {
                         }}
                       />
                       <Typography variant="body2" color="text.secondary" align="right">
-                        {calculateProgress(taxConsultancy.status)}% Complete
+                        {calculateProgress(microsoftServiceApplication.status)}% Complete
                       </Typography>
                     </Box>
 
@@ -624,19 +618,19 @@ const MicrosoftServices: React.FC = () => {
                       </Button>
                       <Button
                         variant="outlined"
-                        startIcon={<EditIcon />}
+                        startIcon={<UpdateIcon />}
                         size="small"
-                        onClick={() => handleEditClick(taxConsultancy)}
+                        onClick={() => handleStatusUpdateClick(microsoftServiceApplication)}
                         fullWidth={isMobile}
                       >
-                        Edit
+                        Update Status
                       </Button>
                       <Button
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteIcon />}
                         size="small"
-                        onClick={() => handleDeleteClick(taxConsultancy)}
+                        onClick={() => handleDeleteClick(microsoftServiceApplication)}
                         fullWidth={isMobile}
                       >
                         Delete
@@ -650,54 +644,47 @@ const MicrosoftServices: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit microsoft services Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={editFormData.companyName}
-                  onChange={(e) => handleEditFormChange('companyName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={editFormData.email}
-                  onChange={(e) => handleEditFormChange('email', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Contact Name"
-                  value={editFormData.contactName}
-                  onChange={(e) => handleEditFormChange('contactName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={editFormData.phoneNumber}
-                  onChange={(e) => handleEditFormChange('phoneNumber', e.target.value)}
-                />
-              </Grid>
-            </Grid>
-          </Box>
+          {selectedMicrosoftServiceApplication && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedMicrosoftServiceApplication.companyName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Reference #: {selectedMicrosoftServiceApplication.referenceNumber}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Contact: {selectedMicrosoftServiceApplication.contactName}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
+                  label="Status"
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  {statusOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={handleEditSubmit}
+            onClick={handleStatusUpdate} 
             variant="contained"
+            disabled={!selectedStatus}
           >
-            Save Changes
+            Update Status
           </Button>
         </DialogActions>
       </Dialog>
@@ -707,7 +694,7 @@ const MicrosoftServices: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the microsoft services  application for {selectedTaxConsultancy?.companyName}?
+            Are you sure you want to delete the Microsoft services application for {selectedMicrosoftServiceApplication?.companyName}?
           </Typography>
         </DialogContent>
         <DialogActions>

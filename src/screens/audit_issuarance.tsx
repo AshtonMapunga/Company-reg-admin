@@ -20,20 +20,23 @@ import {
   DialogContent,
   DialogActions,
   Alert,
-  Snackbar
+  Snackbar,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
   Visibility as ViewIcon,
-  Edit as EditIcon,
+  Update as UpdateIcon,
   Delete as DeleteIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
 import appiledService from '../services/applied_service_service';
 
-// Typess
-interface TaxConsultancy {
+// Types
+interface AuditApplication {
   id: string;
   companyName: string;
   email: string;
@@ -53,8 +56,16 @@ interface FilterOptions {
   };
 }
 
+// Status options for dropdown
+const statusOptions = [
+  { value: 'approved', label: 'Approved' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'rejected', label: 'Rejected' }
+];
+
 // Map API status to component status
-const mapApiStatusToComponentStatus = (apiStatus: string): TaxConsultancy['status'] => {
+const mapApiStatusToComponentStatus = (apiStatus: string): AuditApplication['status'] => {
   switch (apiStatus.toLowerCase()) {
     case 'approved':
       return 'approved';
@@ -70,8 +81,8 @@ const mapApiStatusToComponentStatus = (apiStatus: string): TaxConsultancy['statu
   }
 };
 
-// Map API data to TaxConsultancy interface
-const mapApiDataToTaxConsultancy = (apiData: any): TaxConsultancy => {
+// Map API data to AuditApplication interface
+const mapApiDataToAuditApplication = (apiData: any): AuditApplication => {
   // Generate a unique ID if not provided
   const id = apiData.id || apiData._id || Math.random().toString(36).substr(2, 9);
   
@@ -82,7 +93,7 @@ const mapApiDataToTaxConsultancy = (apiData: any): TaxConsultancy => {
   const updatedDate = apiData.updatedAt ? new Date(apiData.updatedAt) : new Date();
   
   // Generate a reference number if not provided
-  const referenceNumber = apiData.referenceNumber || `TAX-${Math.floor(100000 + Math.random() * 900000)}`;
+  const referenceNumber = apiData.referenceNumber || `AUDIT-${Math.floor(100000 + Math.random() * 900000)}`;
   
   // Map status
   const status = mapApiStatusToComponentStatus(apiData.status || 'pending');
@@ -104,8 +115,8 @@ const AuditAndAssuranceManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
-  const [taxConsultancies, setTaxConsultancies] = useState<TaxConsultancy[]>([]);
-  const [filteredTaxConsultancies, setFilteredTaxConsultancies] = useState<TaxConsultancy[]>([]);
+  const [auditApplications, setAuditApplications] = useState<AuditApplication[]>([]);
+  const [filteredAuditApplications, setFilteredAuditApplications] = useState<AuditApplication[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
     dateRange: {
@@ -116,78 +127,73 @@ const AuditAndAssuranceManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTaxConsultancy, setSelectedTaxConsultancy] = useState<TaxConsultancy | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAuditApplication, setSelectedAuditApplication] = useState<AuditApplication | null>(null);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [editFormData, setEditFormData] = useState({
-    companyName: '',
-    email: '',
-    contactName: '',
-    phoneNumber: ''
-  });
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   useEffect(() => {
-    const fetchTaxConsultancies = async () => {
+    const fetchAuditApplications = async () => {
       try {
         setLoading(true);
         const response = await appiledService.getAllAppliedService();
         
-        // Map API response to TaxConsultancy objects
-        const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
+        // Map API response to AuditApplication objects
+        const mappedAuditApplications = response.map((item: any) => mapApiDataToAuditApplication(item));
         
-        setTaxConsultancies(mappedTaxConsultancies);
-        setFilteredTaxConsultancies(mappedTaxConsultancies);
+        setAuditApplications(mappedAuditApplications);
+        setFilteredAuditApplications(mappedAuditApplications);
         setError(null);
       } catch (err) {
-        console.error('Error fetching :', err);
-        setError('Failed to load audit and assuarance. Please try again later.');
+        console.error('Error fetching audit and assurance applications:', err);
+        setError('Failed to load audit and assurance applications. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTaxConsultancies();
+    fetchAuditApplications();
   }, []);
 
-  const statusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
+  const filterStatusOptions = ['all', 'approved', 'pending', 'in-review', 'rejected'];
 
-  // Filter tax consultancies based on filter options and search term
+  // Filter audit applications based on filter options and search term
   useEffect(() => {
-    let filtered = taxConsultancies;
+    let filtered = auditApplications;
 
     // Filter by status
     if (filterOptions.status !== 'all') {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.status === filterOptions.status
+      filtered = filtered.filter(auditApplication => 
+        auditApplication.status === filterOptions.status
       );
     }
 
     // Filter by date range
     if (filterOptions.dateRange.start) {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.appliedDate >= filterOptions.dateRange.start!
+      filtered = filtered.filter(auditApplication => 
+        auditApplication.appliedDate >= filterOptions.dateRange.start!
       );
     }
     if (filterOptions.dateRange.end) {
-      filtered = filtered.filter(taxConsultancy => 
-        taxConsultancy.appliedDate <= filterOptions.dateRange.end!
+      filtered = filtered.filter(auditApplication => 
+        auditApplication.appliedDate <= filterOptions.dateRange.end!
       );
     }
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(taxConsultancy =>
-        taxConsultancy.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        taxConsultancy.email.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(auditApplication =>
+        auditApplication.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        auditApplication.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        auditApplication.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        auditApplication.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    setFilteredTaxConsultancies(filtered);
-  }, [taxConsultancies, filterOptions, searchTerm]);
+    setFilteredAuditApplications(filtered);
+  }, [auditApplications, filterOptions, searchTerm]);
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
     setFilterOptions(prev => ({
@@ -217,7 +223,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
     setSearchTerm('');
   };
 
-  const getStatusColor = (status: TaxConsultancy['status']): string => {
+  const getStatusColor = (status: AuditApplication['status']): string => {
     switch (status) {
       case 'approved':
         return theme.palette.success.main;
@@ -232,7 +238,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: TaxConsultancy['status']) => {
+  const getStatusIcon = (status: AuditApplication['status']) => {
     switch (status) {
       case 'approved':
         return '✅';
@@ -255,68 +261,56 @@ const AuditAndAssuranceManagement: React.FC = () => {
     });
   };
 
-  const handleEditClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
-    setEditFormData({
-      companyName: taxConsultancy.companyName,
-      email: taxConsultancy.email,
-      contactName: taxConsultancy.contactName,
-      phoneNumber: taxConsultancy.phoneNumber
-    });
-    setEditDialogOpen(true);
+  const handleStatusUpdateClick = (auditApplication: AuditApplication) => {
+    setSelectedAuditApplication(auditApplication);
+    setSelectedStatus(auditApplication.status);
+    setStatusDialogOpen(true);
   };
 
-  const handleDeleteClick = (taxConsultancy: TaxConsultancy) => {
-    setSelectedTaxConsultancy(taxConsultancy);
+  const handleDeleteClick = (auditApplication: AuditApplication) => {
+    setSelectedAuditApplication(auditApplication);
     setDeleteDialogOpen(true);
   };
 
-  const handleEditFormChange = (field: string, value: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleEditSubmit = async () => {
+  const handleStatusUpdate = async () => {
     try {
-      if (!selectedTaxConsultancy) return;
+      if (!selectedAuditApplication || !selectedStatus) return;
       
-      await appiledService.updateAppliedService(selectedTaxConsultancy.id, editFormData);
+      await appiledService.updateAppliedService(selectedAuditApplication.id, { status: selectedStatus });
       
       // Refresh the list
       const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
+      const mappedAuditApplications = response.map((item: any) => mapApiDataToAuditApplication(item));
+      setAuditApplications(mappedAuditApplications);
       
-      setSnackbar({ open: true, message: ' updated successfully', severity: 'success' });
-      setEditDialogOpen(false);
+      setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
+      setStatusDialogOpen(false);
     } catch (error) {
-      console.error('Error updating:', error);
-      setSnackbar({ open: true, message: 'Failed to update ', severity: 'error' });
+      console.error('Error updating status:', error);
+      setSnackbar({ open: true, message: 'Failed to update status', severity: 'error' });
     }
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      if (!selectedTaxConsultancy) return;
+      if (!selectedAuditApplication) return;
       
-      await appiledService.deleteAppliedService(selectedTaxConsultancy.id);
+      await appiledService.deleteAppliedService(selectedAuditApplication.id);
       
       // Refresh the list
       const response = await appiledService.getAllAppliedService();
-      const mappedTaxConsultancies = response.map((item: any) => mapApiDataToTaxConsultancy(item));
-      setTaxConsultancies(mappedTaxConsultancies);
+      const mappedAuditApplications = response.map((item: any) => mapApiDataToAuditApplication(item));
+      setAuditApplications(mappedAuditApplications);
       
-      setSnackbar({ open: true, message: ' deleted successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'Audit application deleted successfully', severity: 'success' });
       setDeleteDialogOpen(false);
     } catch (error) {
-      console.error('Error deleting :', error);
-      setSnackbar({ open: true, message: 'Failed to delete ', severity: 'error' });
+      console.error('Error deleting audit application:', error);
+      setSnackbar({ open: true, message: 'Failed to delete audit application', severity: 'error' });
     }
   };
 
-  const calculateProgress = (status: TaxConsultancy['status']): number => {
+  const calculateProgress = (status: AuditApplication['status']): number => {
     switch (status) {
       case 'approved':
         return 100;
@@ -341,7 +335,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
         alignItems: 'center',
         minHeight: 400
       }}>
-        <Typography variant="h6">Loading audit and assuarance ...</Typography>
+        <Typography variant="h6">Loading audit and assurance applications...</Typography>
       </Box>
     );
   }
@@ -372,10 +366,10 @@ const AuditAndAssuranceManagement: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Audit and assuarance Applications
+          Audit and Assurance Applications
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          View and manage all your audit and assuarance applications
+          View and manage all your audit and assurance applications
         </Typography>
       </Box>
 
@@ -448,7 +442,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
               value={filterOptions.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
-              {statusOptions.map(status => (
+              {filterStatusOptions.map(status => (
                 <MenuItem key={status} value={status}>
                   {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </MenuItem>
@@ -482,13 +476,13 @@ const AuditAndAssuranceManagement: React.FC = () => {
       {/* Results Count */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" color="text.secondary">
-          Showing {filteredTaxConsultancies.length} of {taxConsultancies.length}  applications
+          Showing {filteredAuditApplications.length} of {auditApplications.length} applications
         </Typography>
       </Box>
 
-      {/* Tax Consultancies List */}
+      {/* Audit Applications List */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {filteredTaxConsultancies.length === 0 ? (
+        {filteredAuditApplications.length === 0 ? (
           <Paper 
             elevation={1} 
             sx={{ 
@@ -498,13 +492,13 @@ const AuditAndAssuranceManagement: React.FC = () => {
             }}
           >
             <Typography variant="h6" color="text.secondary">
-              no audit and assuarance found matching your filters.
+              No audit and assurance applications found matching your filters.
             </Typography>
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {filteredTaxConsultancies.map((taxConsultancy) => (
-              <Grid item xs={12} md={6} lg={4} key={taxConsultancy.id}>
+            {filteredAuditApplications.map((auditApplication) => (
+              <Grid item xs={12} md={6} lg={4} key={auditApplication.id}>
                 <Card 
                   sx={{ 
                     height: '100%',
@@ -525,21 +519,21 @@ const AuditAndAssuranceManagement: React.FC = () => {
                     }}>
                       <Box>
                         <Typography variant="h6" component="h3" gutterBottom>
-                          {taxConsultancy.companyName}
+                          {auditApplication.companyName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          #{taxConsultancy.referenceNumber}
+                          #{auditApplication.referenceNumber}
                         </Typography>
                       </Box>
                       <Chip
                         label={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <span>{getStatusIcon(taxConsultancy.status)}</span>
-                            <span>{taxConsultancy.status.toUpperCase()}</span>
+                            <span>{getStatusIcon(auditApplication.status)}</span>
+                            <span>{auditApplication.status.toUpperCase()}</span>
                           </Box>
                         }
                         sx={{ 
-                          backgroundColor: getStatusColor(taxConsultancy.status),
+                          backgroundColor: getStatusColor(auditApplication.status),
                           color: 'white',
                           fontWeight: 'bold'
                         }}
@@ -554,7 +548,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                           Contact Name:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.contactName}
+                          {auditApplication.contactName}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -562,7 +556,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                           Email:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.email}
+                          {auditApplication.email}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -570,7 +564,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                           Phone:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {taxConsultancy.phoneNumber}
+                          {auditApplication.phoneNumber}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -578,7 +572,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                           Applied Date:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(taxConsultancy.appliedDate)}
+                          {formatDate(auditApplication.appliedDate)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -586,7 +580,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                           Last Updated:
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(taxConsultancy.updatedDate)}
+                          {formatDate(auditApplication.updatedDate)}
                         </Typography>
                       </Box>
                     </Box>
@@ -595,7 +589,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                     <Box sx={{ mb: 2 }}>
                       <LinearProgress 
                         variant="determinate" 
-                        value={calculateProgress(taxConsultancy.status)} 
+                        value={calculateProgress(auditApplication.status)} 
                         sx={{ 
                           height: 8, 
                           borderRadius: 4,
@@ -603,7 +597,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                         }}
                       />
                       <Typography variant="body2" color="text.secondary" align="right">
-                        {calculateProgress(taxConsultancy.status)}% Complete
+                        {calculateProgress(auditApplication.status)}% Complete
                       </Typography>
                     </Box>
 
@@ -624,19 +618,19 @@ const AuditAndAssuranceManagement: React.FC = () => {
                       </Button>
                       <Button
                         variant="outlined"
-                        startIcon={<EditIcon />}
+                        startIcon={<UpdateIcon />}
                         size="small"
-                        onClick={() => handleEditClick(taxConsultancy)}
+                        onClick={() => handleStatusUpdateClick(auditApplication)}
                         fullWidth={isMobile}
                       >
-                        Edit
+                        Update Status
                       </Button>
                       <Button
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteIcon />}
                         size="small"
-                        onClick={() => handleDeleteClick(taxConsultancy)}
+                        onClick={() => handleDeleteClick(auditApplication)}
                         fullWidth={isMobile}
                       >
                         Delete
@@ -650,54 +644,47 @@ const AuditAndAssuranceManagement: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit audit and assuarance Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={editFormData.companyName}
-                  onChange={(e) => handleEditFormChange('companyName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={editFormData.email}
-                  onChange={(e) => handleEditFormChange('email', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Contact Name"
-                  value={editFormData.contactName}
-                  onChange={(e) => handleEditFormChange('contactName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={editFormData.phoneNumber}
-                  onChange={(e) => handleEditFormChange('phoneNumber', e.target.value)}
-                />
-              </Grid>
-            </Grid>
-          </Box>
+          {selectedAuditApplication && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedAuditApplication.companyName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Reference #: {selectedAuditApplication.referenceNumber}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Contact: {selectedAuditApplication.contactName}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
+                  label="Status"
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  {statusOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={handleEditSubmit}
+            onClick={handleStatusUpdate} 
             variant="contained"
+            disabled={!selectedStatus}
           >
-            Save Changes
+            Update Status
           </Button>
         </DialogActions>
       </Dialog>
@@ -707,7 +694,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the audit and assuarance  application for {selectedTaxConsultancy?.companyName}?
+            Are you sure you want to delete the audit and assurance application for {selectedAuditApplication?.companyName}?
           </Typography>
         </DialogContent>
         <DialogActions>

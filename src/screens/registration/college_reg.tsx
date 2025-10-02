@@ -19,15 +19,17 @@ import {
   Alert,
   Snackbar,
   MenuItem,
-  InputAdornment
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Add as AddIcon
+  Update as UpdateIcon
 } from '@mui/icons-material';
 import CollegeRegService from '../../services/college_service';
 
@@ -53,15 +55,7 @@ interface CollegeApplication {
 const statusOptions = [
   { value: 'approved', label: 'Approved' },
   { value: 'pending', label: 'Pending' },
-  { value: 'in-review', label: 'In Review' },
   { value: 'rejected', label: 'Rejected' }
-];
-
-const serviceTypeOptions = [
-  { value: 'College Registration', label: 'College Registration' },
-  { value: 'Accreditation', label: 'Accreditation' },
-  { value: 'Renewal', label: 'Renewal' },
-  { value: 'Amendment', label: 'Amendment' }
 ];
 
 // Map API data to CollegeApplication interface
@@ -95,10 +89,10 @@ const CollegeRegistration: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<CollegeApplication | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<CollegeApplication>>({});
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   // Fetch data from API
   const fetchApplications = async () => {
@@ -139,10 +133,10 @@ const CollegeRegistration: React.FC = () => {
     }
   }, [searchTerm, applications]);
 
-  const handleEditClick = (application: CollegeApplication) => {
+  const handleStatusUpdateClick = (application: CollegeApplication) => {
     setSelectedApplication(application);
-    setEditFormData(application);
-    setEditDialogOpen(true);
+    setSelectedStatus(application.status);
+    setStatusDialogOpen(true);
   };
 
   const handleDeleteClick = (application: CollegeApplication) => {
@@ -150,17 +144,17 @@ const CollegeRegistration: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleEditSubmit = async () => {
-    if (!selectedApplication) return;
+  const handleStatusUpdate = async () => {
+    if (!selectedApplication || !selectedStatus) return;
     
     try {
-      await CollegeRegService.updateCollegeRegistration(selectedApplication.id, editFormData);
-      setEditDialogOpen(false);
-      setSuccess('College application updated successfully!');
+      await CollegeRegService.updateCollegeRegistration(selectedApplication.id, { status: selectedStatus });
+      setStatusDialogOpen(false);
+      setSuccess('Status updated successfully!');
       fetchApplications(); // Refresh the list
     } catch (err) {
-      console.error('Error updating application:', err);
-      setError('Failed to update application. Please try again.');
+      console.error('Error updating status:', err);
+      setError('Failed to update status. Please try again.');
     }
   };
 
@@ -176,13 +170,6 @@ const CollegeRegistration: React.FC = () => {
       console.error('Error deleting application:', err);
       setError('Failed to delete application. Please try again.');
     }
-  };
-
-  const handleInputChange = (field: keyof CollegeApplication, value: string) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   const getStatusColor = (status: string): string => {
@@ -469,13 +456,14 @@ const CollegeRegistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditClick(application)}
-                        aria-label="Edit"
+                      <Button
+                        variant="outlined"
+                        startIcon={<UpdateIcon />}
+                        onClick={() => handleStatusUpdateClick(application)}
+                        size="small"
                       >
-                        <EditIcon />
-                      </IconButton>
+                        Update Status
+                      </Button>
                       <IconButton
                         color="error"
                         onClick={() => handleDeleteClick(application)}
@@ -492,114 +480,48 @@ const CollegeRegistration: React.FC = () => {
         )}
       </Box>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit College Application</DialogTitle>
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Application Status</DialogTitle>
         <DialogContent>
           {selectedApplication && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Applicant Name"
-                  value={editFormData.applicantName || ''}
-                  onChange={(e) => handleInputChange('applicantName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Church Name"
-                  value={editFormData.churchName || ''}
-                  onChange={(e) => handleInputChange('churchName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={editFormData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={editFormData.phoneNumber || ''}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="WhatsApp Number"
-                  value={editFormData.whatsappNumber || ''}
-                  onChange={(e) => handleInputChange('whatsappNumber', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Service Type"
-                  value={editFormData.serviceType || ''}
-                  onChange={(e) => handleInputChange('serviceType', e.target.value)}
-                >
-                  {serviceTypeOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="College Name"
-                  value={editFormData.collegeName || ''}
-                  onChange={(e) => handleInputChange('collegeName', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  select
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Update status for <strong>{selectedApplication.applicantName}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Church: {selectedApplication.churchName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Service: {selectedApplication.serviceType}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={selectedStatus}
                   label="Status"
-                  value={editFormData.status || ''}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
                 >
                   {statusOptions.map(option => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="College Address"
-                  multiline
-                  rows={2}
-                  value={editFormData.collegeAddress || ''}
-                  onChange={(e) => handleInputChange('collegeAddress', e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Accreditation Status"
-                  value={editFormData.accreditationStatus || ''}
-                  onChange={(e) => handleInputChange('accreditationStatus', e.target.value)}
-                />
-              </Grid>
-            </Grid>
+                </Select>
+              </FormControl>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleStatusUpdate} 
+            variant="contained"
+            disabled={!selectedStatus}
+          >
+            Update Status
+          </Button>
         </DialogActions>
       </Dialog>
 
