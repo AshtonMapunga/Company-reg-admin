@@ -5,7 +5,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate('/dashboard');
+    navigate('/register');
   }, [navigate]);
 
   return null;

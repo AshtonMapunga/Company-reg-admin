@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -12,6 +13,7 @@ import {
 import { Login as LoginIcon } from '@mui/icons-material';
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     passwrd: ''
@@ -51,7 +53,10 @@ const LoginPage: React.FC = () => {
         if (data.token) {
           localStorage.setItem('authToken', data.token);
         }
-        // Redirect or update app state here
+        // Redirect to home page after successful login
+        setTimeout(() => {
+          navigate('/company-registration');
+        }, 1000);
         console.log('Login successful:', data);
       } else {
         setError(data.message || 'Login failed');
@@ -140,6 +145,23 @@ const LoginPage: React.FC = () => {
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
+
+            {/* Registration link */}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{' '}
+                <Link 
+                  to="/register" 
+                  style={{ 
+                    textDecoration: 'none', 
+                    color: '#1976d2',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Sign up here
+                </Link>
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>

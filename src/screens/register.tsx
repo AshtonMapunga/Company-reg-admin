@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+
 import {
   Box,
   Paper,
@@ -189,6 +191,22 @@ const RegisterPage: React.FC = () => {
             >
               {loading ? 'Registering...' : 'Register'}
             </Button>
+
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{' '}
+                <Link 
+                  to="/login" 
+                  style={{ 
+                    textDecoration: 'none', 
+                    color: '#1976d2',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Login here
+                </Link>
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>
