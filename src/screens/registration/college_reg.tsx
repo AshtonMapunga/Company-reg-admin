@@ -456,7 +456,7 @@ const CollegeRegistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <Button
+                      {/* <Button
                         variant="outlined"
                         startIcon={<UpdateIcon />}
                         onClick={() => handleStatusUpdateClick(application)}
@@ -470,7 +470,7 @@ const CollegeRegistration: React.FC = () => {
                         aria-label="Delete"
                       >
                         <DeleteIcon />
-                      </IconButton>
+                      </IconButton> */}
                     </Box>
                   </CardContent>
                 </Card>

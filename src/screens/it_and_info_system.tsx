@@ -137,7 +137,7 @@ const headCells: HeadCell[] = [
   { id: 'serviceType', numeric: false, disablePadding: false, label: 'Service Type' },
   { id: 'status', numeric: false, disablePadding: false, label: 'Status' },
   { id: 'createdAt', numeric: false, disablePadding: false, label: 'Created Date' },
-  { id: 'actions', numeric: false, disablePadding: false, label: 'Actions' } as unknown as HeadCell
+  // { id: 'actions', numeric: false, disablePadding: false, label: 'Actions' } as unknown as HeadCell
 ];
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -726,7 +726,7 @@ const InformationSystemManagement: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell align="left">{formatDate(row.createdAt)}</TableCell>
-                      <TableCell align="left">
+                      {/* <TableCell align="left">
                         <Box sx={{ display: 'flex', gap: 1 }}>
                           <Tooltip title="Edit">
                             <IconButton
@@ -751,7 +751,7 @@ const InformationSystemManagement: React.FC = () => {
                             </IconButton>
                           </Tooltip>
                         </Box>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   );
                 })}

@@ -152,9 +152,9 @@ const LicenceApplications: React.FC = () => {
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'background.paper' }}>
                   Status
                 </TableCell>
-                <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'background.paper' }}>
+                {/* <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'background.paper' }}>
                   Actions
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -187,7 +187,7 @@ const LicenceApplications: React.FC = () => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Button
                       variant="outlined"
                       size="small"
@@ -196,7 +196,7 @@ const LicenceApplications: React.FC = () => {
                     >
                       Edit Status
                     </Button>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))}
             </TableBody>

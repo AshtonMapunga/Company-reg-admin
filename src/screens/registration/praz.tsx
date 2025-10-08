@@ -406,7 +406,7 @@ const PrazRegistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <IconButton
+                      {/* <IconButton
                         color="primary"
                         onClick={() => handleEditClick(application)}
                         aria-label="Edit"
@@ -419,7 +419,7 @@ const PrazRegistration: React.FC = () => {
                         aria-label="Delete"
                       >
                         <DeleteIcon />
-                      </IconButton>
+                      </IconButton> */}
                     </Box>
                   </CardContent>
                 </Card>

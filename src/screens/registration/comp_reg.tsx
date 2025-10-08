@@ -540,7 +540,7 @@ const CompanyRegistration2: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <Button
+                      {/* <Button
                         variant="outlined"
                         startIcon={<UpdateIcon />}
                         onClick={() => handleStatusUpdateClick(application)}
@@ -554,7 +554,7 @@ const CompanyRegistration2: React.FC = () => {
                         aria-label="Delete"
                       >
                         <DeleteIcon />
-                      </IconButton>
+                      </IconButton> */}
                     </Box>
                   </CardContent>
                 </Card>

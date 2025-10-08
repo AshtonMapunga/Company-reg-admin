@@ -608,7 +608,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                       flexWrap: 'wrap',
                       mt: 'auto'
                     }}>
-                      <Button
+                      {/* <Button
                         variant="contained"
                         startIcon={<ViewIcon />}
                         size="small"
@@ -634,7 +634,7 @@ const AuditAndAssuranceManagement: React.FC = () => {
                         fullWidth={isMobile}
                       >
                         Delete
-                      </Button>
+                      </Button> */}
                     </Box>
                   </CardContent>
                 </Card>

@@ -39,11 +39,11 @@ const Layout: React.FC = () => {
   };
 
   const menuItems = [
-    {
-      text: 'Dashboard',
-      icon: <DashboardIcon />,
-      path: '/dashboard'
-    },
+    // {
+    //   text: 'Dashboard',
+    //   icon: <DashboardIcon />,
+    //   path: '/dashboard'
+    // },
     {
       text: 'Applied Services',
       icon: <ServicesIcon />,

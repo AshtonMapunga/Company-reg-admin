@@ -449,7 +449,7 @@ const CompanyDeregistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <Button
+                      {/* <Button
                         variant="outlined"
                         startIcon={<UpdateIcon />}
                         onClick={() => handleStatusUpdateClick(application)}
@@ -463,7 +463,7 @@ const CompanyDeregistration: React.FC = () => {
                         aria-label="Delete"
                       >
                         <DeleteIcon />
-                      </IconButton>
+                      </IconButton> */}
                     </Box>
                   </CardContent>
                 </Card>
@@ -505,13 +505,13 @@ const CompanyDeregistration: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-          <Button 
+          {/* <Button 
             onClick={handleStatusUpdate} 
             variant="contained"
             disabled={!selectedStatus}
           >
             Update Status
-          </Button>
+          </Button> */}
         </DialogActions>
       </Dialog>
 

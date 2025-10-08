@@ -608,15 +608,15 @@ const AccountingManagement: React.FC = () => {
                       flexWrap: 'wrap',
                       mt: 'auto'
                     }}>
-                      <Button
+                      {/* <Button
                         variant="contained"
                         startIcon={<ViewIcon />}
                         size="small"
                         fullWidth={isMobile}
                       >
                         View Details
-                      </Button>
-                      <Button
+                      </Button> */}
+                      {/* <Button
                         variant="outlined"
                         startIcon={<UpdateIcon />}
                         size="small"
@@ -624,8 +624,8 @@ const AccountingManagement: React.FC = () => {
                         fullWidth={isMobile}
                       >
                         Update Status
-                      </Button>
-                      <Button
+                      </Button> */}
+                      {/* <Button
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteIcon />}
@@ -634,7 +634,7 @@ const AccountingManagement: React.FC = () => {
                         fullWidth={isMobile}
                       >
                         Delete
-                      </Button>
+                      </Button> */}
                     </Box>
                   </CardContent>
                 </Card>

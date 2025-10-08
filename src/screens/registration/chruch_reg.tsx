@@ -428,7 +428,7 @@ const ChurchRegistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      <IconButton
+                      {/* <IconButton
                         color="primary"
                         onClick={() => handleEditClick(application)}
                         aria-label="Edit"
@@ -441,7 +441,7 @@ const ChurchRegistration: React.FC = () => {
                         aria-label="Delete"
                       >
                         <DeleteIcon />
-                      </IconButton>
+                      </IconButton> */}
                     </Box>
                   </CardContent>
                 </Card>
