@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://chatbotbackend-1ox6.onrender.com/api/v1";
+const BASE_URL = "https://echolar-admin-final.onrender.com/api/v1";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -40,7 +40,7 @@ const CollegeRegService = {
   // ✅ Update college registration
   async updateCollegeRegistration(id: string, updateData: any) {
     try {
-      const response = await api.put(`/college_applications/update/${id}`, updateData, {
+      const response = await api.put(`/college_applications/${id}`, updateData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -55,7 +55,7 @@ const CollegeRegService = {
   // ✅ Delete college registration
   async deleteCollegeRegistration(id: string) {
     try {
-      const response = await api.delete(`/college_applications/delete/${id}`, {
+      const response = await api.delete(`/college_applications/${id}`, {
         headers: {
           "Content-Type": "application/json",
         },

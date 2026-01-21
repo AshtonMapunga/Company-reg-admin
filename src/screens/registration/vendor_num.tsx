@@ -29,7 +29,7 @@ import {
   Clear as ClearIcon,
   Add as AddIcon
 } from '@mui/icons-material';
-import VendorregService from '../../services/college_service';
+import VendorNumberService from '../../services/ventor_number_service';
 
 // Types
 interface VendorApplication {
@@ -54,9 +54,9 @@ const statusOptions = [
 const mapApiDataToApplication = (apiData: any): VendorApplication => {
   return {
     id: apiData.id || apiData._id || Math.random().toString(36).substr(2, 9),
-    applicantName: apiData.applicantName || 'Unknown Applicant',
-    applicantEmail: apiData.applicantEmail || '',
-    applicantPhoneNumber: apiData.applicantPhoneNumber || '',
+    applicantName: apiData.contactName || 'Unknown Applicant',
+    applicantEmail: apiData.email || '',
+    applicantPhoneNumber: apiData.phoneNumber || '',
     status: apiData.status || 'pending',
     createdAt: apiData.createdAt ? new Date(apiData.createdAt) : new Date(),
     updatedAt: apiData.updatedAt ? new Date(apiData.updatedAt) : new Date(),
@@ -83,7 +83,7 @@ const VendorNumber: React.FC = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const response = await VendorregService.getAllVendorregService();
+      const response = await VendorNumberService.getAllVendorNumbers();
       
       // Map API response to Application objects
       const mappedApplications = response.map((item: any) => mapApiDataToApplication(item));
@@ -132,7 +132,7 @@ const VendorNumber: React.FC = () => {
     if (!selectedApplication) return;
     
     try {
-      await VendorregService.updateAppliedService(selectedApplication.id, editFormData);
+      await VendorNumberService.updateVendorNumber(selectedApplication.id, editFormData);
       setEditDialogOpen(false);
       setSuccess('Application updated successfully!');
       fetchApplications(); // Refresh the list
@@ -146,7 +146,7 @@ const VendorNumber: React.FC = () => {
     if (!selectedApplication) return;
     
     try {
-      await VendorregService.deleteAppliedService(selectedApplication.id);
+      await VendorNumberService.deleteVendorNumber(selectedApplication.id);
       setDeleteDialogOpen(false);
       setSuccess('Application deleted successfully!');
       fetchApplications(); // Refresh the list

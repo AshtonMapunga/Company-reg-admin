@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://chatbotbackend-1ox6.onrender.com/api/v1";
+const BASE_URL = "https://echolar-admin-final.onrender.com/api/v1";
 
 const api = axios.create({
   baseURL: BASE_URL,

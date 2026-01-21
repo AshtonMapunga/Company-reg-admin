@@ -34,11 +34,11 @@ const subServices = [
   { id: 'company-deregistration', label: 'Company De-registration', icon: <DeRegisterIcon /> },
   { id: 'college-registration', label: 'College Registration', icon: <CollegeIcon /> },
   { id: 'vendor-number', label: 'Vendor Number', icon: <VendorIcon /> },
-  { id: 'vat-registration', label: 'VAT Registration', icon: <VatIcon /> },
+  // { id: 'vat-registration', label: 'VAT Registration', icon: <VatIcon /> },
   { id: 'praz-registration', label: 'PRAZ Registration', icon: <PrazIcon /> },
   { id: 'church-registration', label: 'Church Registration', icon: <ChurchIcon /> },
-  { id: 'nassa-registration', label: 'NASSA Registration', icon: <NassaIcon /> },
-  { id: 'annual-returns', label: 'Annual Returns', icon: <AnnualReturnsIcon /> }
+  // { id: 'nassa-registration', label: 'NASSA Registration', icon: <NassaIcon /> },
+  // { id: 'annual-returns', label: 'Annual Returns', icon: <AnnualReturnsIcon /> }
 ];
 
 // Main Company Registration Component

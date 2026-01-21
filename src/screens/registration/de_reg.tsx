@@ -22,14 +22,28 @@ import {
   InputAdornment,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  CircularProgress,
+  Tooltip,
+  Checkbox,
+  FormControlLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Update as UpdateIcon
+  Edit as EditIcon,
+  Update as UpdateIcon,
+  Visibility as VisibilityIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import DeregService from '../../services/company_de_registration';
 
@@ -40,7 +54,7 @@ interface DeregApplication {
   applicantEmail: string;
   applicantPhone: string;
   serviceType: string;
-  status: 'approved' | 'pending' | 'rejected' | 'in-review';
+  status: 'Approved' | 'Pending' | 'Rejected' ;
   companyName: string;
   businessType: string;
   registrationNumber: string;
@@ -55,9 +69,9 @@ interface DeregApplication {
 }
 
 const statusOptions = [
-  { value: 'approved', label: 'Approved' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'rejected', label: 'Rejected' }
+  { value: 'Approved', label: 'Approved', color: 'success' },
+  { value: 'Pending', label: 'Pending', color: 'warning' },
+  { value: 'Rejected', label: 'Rejected', color: 'error' },
 ];
 
 const businessTypes = [
@@ -82,6 +96,15 @@ const positionsInCompany = [
   'Other'
 ];
 
+const deregistrationReasons = [
+  'Business Closure',
+  'Company Merger',
+  'Restructuring',
+  'Financial Difficulties',
+  'Market Exit',
+  'Other'
+];
+
 // Map API data to DeregApplication interface
 const mapApiDataToApplication = (apiData: any): DeregApplication => {
   return {
@@ -90,7 +113,7 @@ const mapApiDataToApplication = (apiData: any): DeregApplication => {
     applicantEmail: apiData.applicantEmail || '',
     applicantPhone: apiData.applicantPhone || '',
     serviceType: apiData.serviceType || 'Company De-Registration',
-    status: apiData.status || 'pending',
+    status: (apiData.status?.toLowerCase() as DeregApplication['status']) || 'Pending',
     companyName: apiData.companyName || 'Unknown Company',
     businessType: apiData.businessType || 'Other',
     registrationNumber: apiData.registrationNumber || '',
@@ -117,8 +140,25 @@ const CompanyDeregistration: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<DeregApplication | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // Update form state
+  const [updateForm, setUpdateForm] = useState({
+    companyName: '',
+    businessType: '',
+    registrationNumber: '',
+    registrationDate: '',
+    positionInCompany: '',
+    authorityToAct: '',
+    deregistrationReason: '',
+    hasOutstandingObligations: false,
+    outstandingDetails: ''
+  });
 
   // Fetch data from API
   const fetchApplications = async () => {
@@ -150,11 +190,11 @@ const CompanyDeregistration: React.FC = () => {
       setFilteredApplications(applications);
     } else {
       const filtered = applications.filter(app =>
-        app.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.businessType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.applicantEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.applicantName.toLowerCase().includes(searchTerm.toLowerCase())
+        app.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.registrationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.businessType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.applicantEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.applicantName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredApplications(filtered);
     }
@@ -171,10 +211,32 @@ const CompanyDeregistration: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleUpdateClick = (application: DeregApplication) => {
+    setSelectedApplication(application);
+    setUpdateForm({
+      companyName: application.companyName || '',
+      businessType: application.businessType || '',
+      registrationNumber: application.registrationNumber || '',
+      registrationDate: application.registrationDate || '',
+      positionInCompany: application.positionInCompany || '',
+      authorityToAct: application.authorityToAct || '',
+      deregistrationReason: application.deregistrationReason || '',
+      hasOutstandingObligations: application.hasOutstandingObligations || false,
+      outstandingDetails: application.outstandingDetails || ''
+    });
+    setUpdateDialogOpen(true);
+  };
+
+  const handleViewClick = (application: DeregApplication) => {
+    setSelectedApplication(application);
+    setViewDialogOpen(true);
+  };
+
   const handleStatusUpdate = async () => {
     if (!selectedApplication || !selectedStatus) return;
     
     try {
+      setUpdateLoading(true);
       await DeregService.updateStatusService(selectedApplication.id, { status: selectedStatus });
       setStatusDialogOpen(false);
       setSuccess('Status updated successfully!');
@@ -182,6 +244,8 @@ const CompanyDeregistration: React.FC = () => {
     } catch (err) {
       console.error('Error updating status:', err);
       setError('Failed to update status. Please try again.');
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -189,6 +253,7 @@ const CompanyDeregistration: React.FC = () => {
     if (!selectedApplication) return;
     
     try {
+      setDeleteLoading(true);
       await DeregService.deleteAppliedService(selectedApplication.id);
       setDeleteDialogOpen(false);
       setSuccess('Application deleted successfully!');
@@ -196,34 +261,81 @@ const CompanyDeregistration: React.FC = () => {
     } catch (err) {
       console.error('Error deleting application:', err);
       setError('Failed to delete application. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleUpdateConfirm = async () => {
+    if (!selectedApplication) return;
+    
+    try {
+      setUpdateLoading(true);
+      const updateData = {
+        ...updateForm,
+        // Include other fields that might be required by your API
+        applicantName: selectedApplication.applicantName,
+        applicantEmail: selectedApplication.applicantEmail,
+        applicantPhone: selectedApplication.applicantPhone,
+        serviceType: selectedApplication.serviceType
+      };
+      
+      await DeregService.updateAppliedService(selectedApplication.id, updateData);
+      setUpdateDialogOpen(false);
+      setSuccess('Deregistration application updated successfully!');
+      fetchApplications(); // Refresh the list
+    } catch (err) {
+      console.error('Error updating application:', err);
+      setError('Failed to update application. Please try again.');
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'approved':
+      case 'Approved':
         return theme.palette.success.main;
-      case 'pending':
+      case 'Pending':
         return theme.palette.warning.main;
-      case 'in-review':
-        return theme.palette.info.main;
-      case 'rejected':
+      case 'Rejected':
         return theme.palette.error.main;
       default:
         return theme.palette.warning.main;
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return <CheckCircleIcon sx={{ color: theme.palette.success.main, mr: 1 }} />;
+      case 'Rejected':
+        return <CancelIcon sx={{ color: theme.palette.error.main, mr: 1 }} />;
+      default:
+        return <UpdateIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />;
+    }
+  };
+
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const clearSearch = () => {
     setSearchTerm('');
+  };
+
+  const getOutstandingStatus = (hasObligations: boolean): string => {
+    return hasObligations ? 'Yes' : 'No';
   };
 
   if (loading) {
@@ -236,7 +348,8 @@ const CompanyDeregistration: React.FC = () => {
         alignItems: 'center',
         minHeight: 400
       }}>
-        <Typography variant="h6">Loading applications...</Typography>
+        <CircularProgress />
+        <Typography variant="h6" sx={{ ml: 2 }}>Loading deregistration applications...</Typography>
       </Box>
     );
   }
@@ -272,7 +385,7 @@ const CompanyDeregistration: React.FC = () => {
         </Alert>
       </Snackbar>
 
-      {/* Search Section */}
+      {/* Header and Search Section */}
       <Paper 
         elevation={1} 
         sx={{ 
@@ -281,40 +394,44 @@ const CompanyDeregistration: React.FC = () => {
           backgroundColor: theme.palette.background.paper
         }}
       >
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <TextField
-            fullWidth
-            label="Search Applications"
-            placeholder="Search by company name, registration number, business type, applicant name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: searchTerm && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={clearSearch}
-                  >
-                    <ClearIcon />
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-          <Button
-            variant="outlined"
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h4" component="h1">
+            Company Deregistration Applications
+          </Typography>
+          <Button 
+            variant="contained" 
             startIcon={<RefreshIcon />}
             onClick={fetchApplications}
-            sx={{ minWidth: 'auto' }}
+            disabled={loading}
           >
-            {isMobile ? '' : 'Refresh'}
+            {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
         </Box>
+        
+        <TextField
+          fullWidth
+          label="Search Deregistration Applications"
+          placeholder="Search by company name, registration number, business type, applicant name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={clearSearch}
+                >
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
       </Paper>
 
       {/* Results Count */}
@@ -337,7 +454,7 @@ const CompanyDeregistration: React.FC = () => {
           >
             <Typography variant="h6" color="text.secondary">
               {applications.length === 0 
-                ? 'No applications found.' 
+                ? 'No deregistration applications found.' 
                 : 'No applications match your search criteria.'}
             </Typography>
           </Paper>
@@ -358,10 +475,11 @@ const CompanyDeregistration: React.FC = () => {
                     flexDirection: isMobile ? 'column' : 'row',
                     justifyContent: 'space-between',
                     alignItems: isMobile ? 'flex-start' : 'center',
-                    gap: 2
+                    gap: 2,
+                    width: '100%'
                   }}>
                     {/* Application Info */}
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, width: '100%' }}>
                       <Box sx={{ 
                         display: 'flex', 
                         justifyContent: 'space-between', 
@@ -375,7 +493,7 @@ const CompanyDeregistration: React.FC = () => {
                             {application.companyName}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            #{application.registrationNumber}
+                            #{application.registrationNumber || 'No registration number'}
                           </Typography>
                         </Box>
                         <Chip
@@ -395,7 +513,7 @@ const CompanyDeregistration: React.FC = () => {
                             Applicant:
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {application.applicantName}
+                            {application.applicantName || 'N/A'}
                           </Typography>
                         </Grid>
                         
@@ -404,7 +522,7 @@ const CompanyDeregistration: React.FC = () => {
                             Business Type:
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {application.businessType}
+                            {application.businessType || 'N/A'}
                           </Typography>
                         </Grid>
                         
@@ -419,10 +537,10 @@ const CompanyDeregistration: React.FC = () => {
                         
                         <Grid item xs={12} sm={6} md={3}>
                           <Typography variant="body2" fontWeight="medium">
-                            Applicant Email:
+                            Outstanding Obligations:
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {application.applicantEmail || 'N/A'}
+                            {getOutstandingStatus(application.hasOutstandingObligations)}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -437,7 +555,7 @@ const CompanyDeregistration: React.FC = () => {
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden'
                         }}>
-                          {application.deregistrationReason}
+                          {application.deregistrationReason || 'Not specified'}
                         </Typography>
                       </Box>
                     </Box>
@@ -449,21 +567,45 @@ const CompanyDeregistration: React.FC = () => {
                       flexWrap: 'wrap',
                       alignSelf: isMobile ? 'flex-end' : 'center'
                     }}>
-                      {/* <Button
-                        variant="outlined"
-                        startIcon={<UpdateIcon />}
-                        onClick={() => handleStatusUpdateClick(application)}
-                        size="small"
-                      >
-                        Update Status
-                      </Button>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteClick(application)}
-                        aria-label="Delete"
-                      >
-                        <DeleteIcon />
-                      </IconButton> */}
+                      <Tooltip title="View Details">
+                        <IconButton
+                          color="info"
+                          onClick={() => handleViewClick(application)}
+                          aria-label="View"
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      <Tooltip title="Update Status">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleStatusUpdateClick(application)}
+                          aria-label="Update Status"
+                        >
+                          <UpdateIcon />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      <Tooltip title="Edit Application">
+                        <IconButton
+                          color="warning"
+                          onClick={() => handleUpdateClick(application)}
+                          aria-label="Edit"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      <Tooltip title="Delete Application">
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteClick(application)}
+                          aria-label="Delete"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                   </CardContent>
                 </Card>
@@ -475,7 +617,12 @@ const CompanyDeregistration: React.FC = () => {
 
       {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Update Application Status</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {selectedApplication && getStatusIcon(selectedStatus)}
+            Update Application Status
+          </Box>
+        </DialogTitle>
         <DialogContent>
           {selectedApplication && (
             <Box sx={{ mt: 2 }}>
@@ -483,7 +630,10 @@ const CompanyDeregistration: React.FC = () => {
                 Update status for <strong>{selectedApplication.companyName}</strong>
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Registration #: {selectedApplication.registrationNumber}
+                Application ID: {selectedApplication.id}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Applicant: {selectedApplication.applicantName}
               </Typography>
               
               <FormControl fullWidth sx={{ mt: 3 }}>
@@ -495,7 +645,17 @@ const CompanyDeregistration: React.FC = () => {
                 >
                   {statusOptions.map(option => (
                     <MenuItem key={option.value} value={option.value}>
-                      {option.label}
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Chip 
+                          label={option.label} 
+                          size="small" 
+                          sx={{ 
+                            backgroundColor: getStatusColor(option.value),
+                            color: 'white',
+                            mr: 1
+                          }} 
+                        />
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -504,14 +664,302 @@ const CompanyDeregistration: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-          {/* <Button 
+          <Button onClick={() => setStatusDialogOpen(false)} disabled={updateLoading}>
+            Cancel
+          </Button>
+          <Button 
             onClick={handleStatusUpdate} 
             variant="contained"
-            disabled={!selectedStatus}
+            disabled={!selectedStatus || updateLoading || selectedStatus === selectedApplication?.status}
+            startIcon={updateLoading ? <CircularProgress size={20} /> : null}
           >
-            Update Status
-          </Button> */}
+            {updateLoading ? 'Updating...' : 'Update Status'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Update Application Dialog */}
+      <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <EditIcon sx={{ mr: 1 }} />
+            Update Deregistration Application
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedApplication && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Application ID: {selectedApplication.id}
+              </Typography>
+              
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Company Name"
+                    value={updateForm.companyName}
+                    onChange={(e) => setUpdateForm({...updateForm, companyName: e.target.value})}
+                    margin="normal"
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth margin="normal" required>
+                    <InputLabel>Business Type</InputLabel>
+                    <Select
+                      value={updateForm.businessType}
+                      label="Business Type"
+                      onChange={(e) => setUpdateForm({...updateForm, businessType: e.target.value})}
+                    >
+                      {businessTypes.map(type => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Registration Number"
+                    value={updateForm.registrationNumber}
+                    onChange={(e) => setUpdateForm({...updateForm, registrationNumber: e.target.value})}
+                    margin="normal"
+                    required
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Registration Date"
+                    type="date"
+                    value={updateForm.registrationDate}
+                    onChange={(e) => setUpdateForm({...updateForm, registrationDate: e.target.value})}
+                    margin="normal"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth margin="normal" required>
+                    <InputLabel>Position in Company</InputLabel>
+                    <Select
+                      value={updateForm.positionInCompany}
+                      label="Position in Company"
+                      onChange={(e) => setUpdateForm({...updateForm, positionInCompany: e.target.value})}
+                    >
+                      {positionsInCompany.map(position => (
+                        <MenuItem key={position} value={position}>
+                          {position}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Authority to Act"
+                    value={updateForm.authorityToAct}
+                    onChange={(e) => setUpdateForm({...updateForm, authorityToAct: e.target.value})}
+                    margin="normal"
+                    placeholder="e.g., Board Resolution, Power of Attorney"
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <FormControl fullWidth margin="normal" required>
+                    <InputLabel>Reason for Deregistration</InputLabel>
+                    <Select
+                      value={updateForm.deregistrationReason}
+                      label="Reason for Deregistration"
+                      onChange={(e) => setUpdateForm({...updateForm, deregistrationReason: e.target.value})}
+                    >
+                      {deregistrationReasons.map(reason => (
+                        <MenuItem key={reason} value={reason}>
+                          {reason}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={updateForm.hasOutstandingObligations}
+                        onChange={(e) => setUpdateForm({...updateForm, hasOutstandingObligations: e.target.checked})}
+                      />
+                    }
+                    label="Has Outstanding Obligations (taxes, debts, etc.)"
+                  />
+                </Grid>
+                
+                {updateForm.hasOutstandingObligations && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Outstanding Obligations Details"
+                      value={updateForm.outstandingDetails}
+                      onChange={(e) => setUpdateForm({...updateForm, outstandingDetails: e.target.value})}
+                      margin="normal"
+                      multiline
+                      rows={3}
+                      placeholder="Please provide details of outstanding obligations..."
+                    />
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateDialogOpen(false)} disabled={updateLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleUpdateConfirm} 
+            variant="contained"
+            disabled={updateLoading}
+            startIcon={updateLoading ? <CircularProgress size={20} /> : null}
+          >
+            {updateLoading ? 'Updating...' : 'Update Application'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Application Details Dialog */}
+      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <VisibilityIcon sx={{ mr: 1 }} />
+            Application Details
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedApplication && (
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ mb: 3, p: 2, backgroundColor: theme.palette.background.default, borderRadius: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Company Name:</Typography>
+                    <Typography variant="body1">{selectedApplication.companyName}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Status:</Typography>
+                    <Chip 
+                      label={selectedApplication.status.toUpperCase()} 
+                      sx={{ 
+                        backgroundColor: getStatusColor(selectedApplication.status),
+                        color: 'white'
+                      }} 
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Applicant Name:</Typography>
+                    <Typography variant="body1">{selectedApplication.applicantName}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Applicant Email:</Typography>
+                    <Typography variant="body1">{selectedApplication.applicantEmail}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Applicant Phone:</Typography>
+                    <Typography variant="body1">{selectedApplication.applicantPhone}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Business Type:</Typography>
+                    <Typography variant="body1">{selectedApplication.businessType}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Registration Number:</Typography>
+                    <Typography variant="body1">{selectedApplication.registrationNumber || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Registration Date:</Typography>
+                    <Typography variant="body1">{selectedApplication.registrationDate || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Position in Company:</Typography>
+                    <Typography variant="body1">{selectedApplication.positionInCompany}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" fontWeight="medium">Authority to Act:</Typography>
+                    <Typography variant="body1">{selectedApplication.authorityToAct || 'N/A'}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Deregistration Details */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Deregistration Details
+                </Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableBody>
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          <Typography variant="body2" fontWeight="medium">Reason for Deregistration:</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{selectedApplication.deregistrationReason}</Typography>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          <Typography variant="body2" fontWeight="medium">Outstanding Obligations:</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {getOutstandingStatus(selectedApplication.hasOutstandingObligations)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                      {selectedApplication.hasOutstandingObligations && selectedApplication.outstandingDetails && (
+                        <TableRow>
+                          <TableCell component="th" scope="row">
+                            <Typography variant="body2" fontWeight="medium">Obligations Details:</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{selectedApplication.outstandingDetails}</Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          <Typography variant="body2" fontWeight="medium">Applied On:</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{formatDate(selectedApplication.createdAt)}</Typography>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell component="th" scope="row">
+                          <Typography variant="body2" fontWeight="medium">Last Updated:</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{formatDate(selectedApplication.updatedAt)}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
@@ -519,14 +967,35 @@ const CompanyDeregistration: React.FC = () => {
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete the deregistration application for {selectedApplication?.companyName}?
-          </Typography>
+          {selectedApplication && (
+            <Box>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                This action cannot be undone.
+              </Alert>
+              <Typography>
+                Are you sure you want to delete the deregistration application for <strong>{selectedApplication.companyName}</strong>?
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Application ID: {selectedApplication.id}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Registration #: {selectedApplication.registrationNumber || 'N/A'}
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Delete
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteConfirm} 
+            color="error" 
+            variant="contained"
+            disabled={deleteLoading}
+            startIcon={deleteLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

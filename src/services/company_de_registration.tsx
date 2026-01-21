@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://chatbotbackend-1ox6.onrender.com/api/v1";
+const BASE_URL = "https://echolar-admin-final.onrender.com/api/v1";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -41,7 +41,7 @@ const DeregService = {
 
   async updateAppliedService(id: string, updateData: any) {
     try {
-      const response = await api.put(`/update/${id}`, updateData, {
+      const response = await api.put(`/comp_de_reg_applications/${id}`, updateData, {
          headers: {
     "Content-Type": "application/json"
   }
@@ -56,7 +56,7 @@ const DeregService = {
  
   async deleteAppliedService(id: string) {
     try {
-      const response = await api.delete(`/delete/${id}`, {
+      const response = await api.delete(`/comp_de_reg_applications/${id}`, {
          headers: {
     "Content-Type": "application/json"
   }

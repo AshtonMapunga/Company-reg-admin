@@ -1,7 +1,7 @@
 // services/licenceService.ts
 import axios from "axios";
 
-const BASE_URL = "https://chatbotbackend-1ox6.onrender.com/api/v1";
+const BASE_URL = "https://echolar-admin-final.onrender.com/api/v1";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -38,7 +38,7 @@ const LicenceService = {
 
   async updateAppliedService(id: string, updateData: any) {
     try {
-      const response = await api.put(`/update/${id}`, updateData, {
+      const response = await api.put(`/licence-applications/${id}`, updateData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -52,7 +52,7 @@ const LicenceService = {
 
   async deleteAppliedService(id: string) {
     try {
-      const response = await api.delete(`/delete/${id}`, {
+      const response = await api.delete(`/licence-applications/${id}`, {
         headers: {
           "Content-Type": "application/json",
         },
